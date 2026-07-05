@@ -1,0 +1,74 @@
+name: LocalWillow
+options:
+  bundleIdPrefix: dev.yun
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Set your Apple ID team in Xcode (Signing & Capabilities) or here:
+    # DEVELOPMENT_TEAM: XXXXXXXXXX
+
+targets:
+  LocalWillow:
+    type: application
+    platform: iOS
+    sources:
+      - App/Sources
+      - App/Assets.xcassets
+    dependencies:
+      - target: WillowKeyboard
+        embed: true
+    entitlements:
+      path: App/App.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.dev.yun.localwillow
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: LocalWillow
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSMicrophoneUsageDescription: >-
+          LocalWillow transcribes your speech entirely on this iPhone.
+          Audio never leaves your device.
+        NSSpeechRecognitionUsageDescription: >-
+          Transcription runs fully on-device. Nothing is sent to any server.
+        CFBundleURLTypes:
+          - CFBundleURLName: dev.yun.localwillow
+            CFBundleURLSchemes: [localwillow]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.yun.localwillow.ios
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+  WillowKeyboard:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Keyboard/Sources
+    entitlements:
+      path: Keyboard/Keyboard.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.dev.yun.localwillow
+    info:
+      path: Keyboard/Info.plist
+      properties:
+        CFBundleDisplayName: LocalWillow Keys
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.keyboard-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
+          NSExtensionAttributes:
+            IsASCIICapable: false
+            PrefersRightToLeft: false
+            PrimaryLanguage: en-US
+            RequestsOpenAccess: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.yun.localwillow.ios.keyboard

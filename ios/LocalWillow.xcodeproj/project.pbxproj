@@ -1,0 +1,452 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		209766BA932AEA809C25A052 /* WillowKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1D4F1E9ED2BA00F4CE09B98B /* WillowKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3E08361B60FB53BBFA7A0A49 /* TextCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0853FA67B2685AA20F52E1F9 /* TextCleaner.swift */; };
+		55ECA172E3FF6A101F6599AF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F545E446B94CCC4C1D977ACC /* Assets.xcassets */; };
+		7D6AB3A577F83B0C43CEC6B6 /* LocalWillowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CB54390625DF27361D9430 /* LocalWillowApp.swift */; };
+		97573EEB923A0AE236B4831B /* SharedHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3518550D27E3190F63D65CAB /* SharedHistory.swift */; };
+		AF3E64237CC0F1DF7AB39BB8 /* DictationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D70CA084904E8838A881036A /* DictationView.swift */; };
+		D54D1EA4EF1C3C160498D8F2 /* KeyboardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BCA138D4F11417646F87392 /* KeyboardViewController.swift */; };
+		E108692B7BB20D20EF5B7210 /* HistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D246C6CAD04E479167914ED /* HistoryStore.swift */; };
+		EF4B07465EA08BC478BEA441 /* SpeechEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41B341DB1E0722A3327BE0B3 /* SpeechEngine.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		005336F1AC7A6FEFF11A9D34 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 93E7F092B3E766053589F657 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 14131D196DE68DBDBAC4F773;
+			remoteInfo = WillowKeyboard;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0CBC98FFE7AA50CF7892701F /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				209766BA932AEA809C25A052 /* WillowKeyboard.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0853FA67B2685AA20F52E1F9 /* TextCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCleaner.swift; sourceTree = "<group>"; };
+		12CB54390625DF27361D9430 /* LocalWillowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalWillowApp.swift; sourceTree = "<group>"; };
+		1BCA138D4F11417646F87392 /* KeyboardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardViewController.swift; sourceTree = "<group>"; };
+		1D246C6CAD04E479167914ED /* HistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryStore.swift; sourceTree = "<group>"; };
+		1D4F1E9ED2BA00F4CE09B98B /* WillowKeyboard.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WillowKeyboard.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		3518550D27E3190F63D65CAB /* SharedHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedHistory.swift; sourceTree = "<group>"; };
+		41B341DB1E0722A3327BE0B3 /* SpeechEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechEngine.swift; sourceTree = "<group>"; };
+		70F892B2285F51B8EDB2FAA8 /* LocalWillow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LocalWillow.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D70CA084904E8838A881036A /* DictationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationView.swift; sourceTree = "<group>"; };
+		F545E446B94CCC4C1D977ACC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		04CC38C8660F7999019BCAFF /* Keyboard */ = {
+			isa = PBXGroup;
+			children = (
+				CE08A4DBF8559598EE5C1F2F /* Sources */,
+			);
+			path = Keyboard;
+			sourceTree = "<group>";
+		};
+		527A2C33E78CDE304E3B9767 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				F545E446B94CCC4C1D977ACC /* Assets.xcassets */,
+				5F37C1DB1AF4558C5C0E4533 /* Sources */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		5F37C1DB1AF4558C5C0E4533 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				D70CA084904E8838A881036A /* DictationView.swift */,
+				1D246C6CAD04E479167914ED /* HistoryStore.swift */,
+				12CB54390625DF27361D9430 /* LocalWillowApp.swift */,
+				41B341DB1E0722A3327BE0B3 /* SpeechEngine.swift */,
+				0853FA67B2685AA20F52E1F9 /* TextCleaner.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		CE08A4DBF8559598EE5C1F2F /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				1BCA138D4F11417646F87392 /* KeyboardViewController.swift */,
+				3518550D27E3190F63D65CAB /* SharedHistory.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		F9E7AD57C48128432BDFF7C9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				70F892B2285F51B8EDB2FAA8 /* LocalWillow.app */,
+				1D4F1E9ED2BA00F4CE09B98B /* WillowKeyboard.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FB2762A0E86353A07B1D5D40 = {
+			isa = PBXGroup;
+			children = (
+				527A2C33E78CDE304E3B9767 /* App */,
+				04CC38C8660F7999019BCAFF /* Keyboard */,
+				F9E7AD57C48128432BDFF7C9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		14131D196DE68DBDBAC4F773 /* WillowKeyboard */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 366A1491F4E6DC65196352A3 /* Build configuration list for PBXNativeTarget "WillowKeyboard" */;
+			buildPhases = (
+				CA9612A730C0B5E6260BEFFE /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WillowKeyboard;
+			packageProductDependencies = (
+			);
+			productName = WillowKeyboard;
+			productReference = 1D4F1E9ED2BA00F4CE09B98B /* WillowKeyboard.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		A1C9BFAFEFA0C1601F56899D /* LocalWillow */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2452D802FE48281E709834DF /* Build configuration list for PBXNativeTarget "LocalWillow" */;
+			buildPhases = (
+				F9D9824072A8A689C70DF836 /* Sources */,
+				907F4C67B0A6C99F17FCFAC2 /* Resources */,
+				0CBC98FFE7AA50CF7892701F /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E724502E0DC39AE316F6F431 /* PBXTargetDependency */,
+			);
+			name = LocalWillow;
+			packageProductDependencies = (
+			);
+			productName = LocalWillow;
+			productReference = 70F892B2285F51B8EDB2FAA8 /* LocalWillow.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		93E7F092B3E766053589F657 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 369E197BDE94EC425EA3FBB8 /* Build configuration list for PBXProject "LocalWillow" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = FB2762A0E86353A07B1D5D40;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F9E7AD57C48128432BDFF7C9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A1C9BFAFEFA0C1601F56899D /* LocalWillow */,
+				14131D196DE68DBDBAC4F773 /* WillowKeyboard */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		907F4C67B0A6C99F17FCFAC2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				55ECA172E3FF6A101F6599AF /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CA9612A730C0B5E6260BEFFE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D54D1EA4EF1C3C160498D8F2 /* KeyboardViewController.swift in Sources */,
+				97573EEB923A0AE236B4831B /* SharedHistory.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F9D9824072A8A689C70DF836 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AF3E64237CC0F1DF7AB39BB8 /* DictationView.swift in Sources */,
+				E108692B7BB20D20EF5B7210 /* HistoryStore.swift in Sources */,
+				7D6AB3A577F83B0C43CEC6B6 /* LocalWillowApp.swift in Sources */,
+				EF4B07465EA08BC478BEA441 /* SpeechEngine.swift in Sources */,
+				3E08361B60FB53BBFA7A0A49 /* TextCleaner.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E724502E0DC39AE316F6F431 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 14131D196DE68DBDBAC4F773 /* WillowKeyboard */;
+			targetProxy = 005336F1AC7A6FEFF11A9D34 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		17885AA58FE1C18CAC632DA1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.yun.localwillow.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		6490B99A55F5B93D329C8E11 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		7BB6E697A6613C96C7E82D13 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		9216DCB03A50FCEFD39AB734 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.yun.localwillow.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D5EBFDAD36809594EEB1D1E1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Keyboard/Keyboard.entitlements;
+				INFOPLIST_FILE = Keyboard/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.yun.localwillow.ios.keyboard;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		DEA1A0B91DF34260DB43F03F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Keyboard/Keyboard.entitlements;
+				INFOPLIST_FILE = Keyboard/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.yun.localwillow.ios.keyboard;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2452D802FE48281E709834DF /* Build configuration list for PBXNativeTarget "LocalWillow" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9216DCB03A50FCEFD39AB734 /* Debug */,
+				17885AA58FE1C18CAC632DA1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		366A1491F4E6DC65196352A3 /* Build configuration list for PBXNativeTarget "WillowKeyboard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DEA1A0B91DF34260DB43F03F /* Debug */,
+				D5EBFDAD36809594EEB1D1E1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		369E197BDE94EC425EA3FBB8 /* Build configuration list for PBXProject "LocalWillow" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7BB6E697A6613C96C7E82D13 /* Debug */,
+				6490B99A55F5B93D329C8E11 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 93E7F092B3E766053589F657 /* Project object */;
+}

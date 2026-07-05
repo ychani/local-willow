@@ -13,3 +13,7 @@ __pycache__/
 config.json
 *.wav
 .DS_Store
+
+# Xcode user state
+ios/**/xcuserdata/
+ios/**/*.xcuserstate

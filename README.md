@@ -72,7 +72,14 @@ bias detection — prefer a fixed language if you rely heavily on vocabulary.
 | Style memory / context awareness | Vocabulary biasing + corrections dictionary |
 | Zero-data-retention *policy* | Zero-data-egress *architecture* (server on 127.0.0.1, temp WAVs deleted) |
 
+## iPhone version
+
+`ios/` contains the iOS app (SwiftUI + on-device SFSpeechRecognizer, EN/KO) with a
+custom keyboard extension that inserts recent dictations into any app — see
+[ios/README.md](ios/README.md). Requires Xcode to build and a phone to run on.
+
 ## Repo layout
 
 - `app/` — Swift sources, `build.sh`, `Info.plist` → builds and installs `LocalWillow.app`
+- `ios/` — iPhone app + keyboard extension (XcodeGen project)
 - `models/` — ggml Whisper models
