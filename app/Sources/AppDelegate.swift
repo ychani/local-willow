@@ -17,6 +17,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Log.write("launch: mic=\(micStatus == .authorized ? "granted" : "NOT granted (\(micStatus.rawValue))") "
             + "accessibility=\(AXIsProcessTrusted() ? "trusted" : "NOT trusted")")
 
+        // Dark UI throughout, independent of the system theme.
+        NSApp.appearance = NSAppearance(named: .darkAqua)
+
         buildMainMenu()
         setupStatusItem()
         engine.start()
@@ -145,17 +148,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setIcon(state: IconState) {
         guard let button = statusItem?.button else { return }
-        let (symbol, desc): (String, String) = {
+        // Custom waveform mark matching the app icon (template → adapts to menu bar theme).
+        let heights: [CGFloat] = {
             switch state {
-            case .idle: return ("mic", "LocalWillow")
-            case .recording: return ("mic.fill", "Recording")
-            case .processing: return ("waveform", "Transcribing")
+            case .idle: return [0.30, 0.55, 0.85, 0.55, 0.30]
+            case .recording: return [0.45, 0.75, 1.0, 0.75, 0.45]
+            case .processing: return [0.22, 0.38, 0.55, 0.38, 0.22]
             }
         }()
-        let img = NSImage(systemSymbolName: symbol, accessibilityDescription: desc)
-        img?.isTemplate = (state == .idle)
-        button.image = img
-        button.contentTintColor = (state == .recording) ? .systemRed : nil
+        button.image = Self.waveformIcon(heights: heights)
+        switch state {
+        case .idle: button.contentTintColor = nil
+        case .recording: button.contentTintColor = .systemRed
+        case .processing: button.contentTintColor = .secondaryLabelColor
+        }
+    }
+
+    private static func waveformIcon(heights: [CGFloat]) -> NSImage {
+        let size = NSSize(width: 18, height: 16)
+        let barWidth: CGFloat = 2.4
+        let gap: CGFloat = 1.4
+        let img = NSImage(size: size, flipped: false) { rect in
+            NSColor.black.setFill()
+            let total = CGFloat(heights.count) * barWidth + CGFloat(heights.count - 1) * gap
+            var x = rect.midX - total / 2
+            for h in heights {
+                let barHeight = max(barWidth, rect.height * h)
+                let bar = NSRect(x: x, y: rect.midY - barHeight / 2,
+                                 width: barWidth, height: barHeight)
+                NSBezierPath(roundedRect: bar, xRadius: barWidth / 2,
+                             yRadius: barWidth / 2).fill()
+                x += barWidth + gap
+            }
+            return true
+        }
+        img.isTemplate = true
+        return img
     }
 
     private func buildStatusMenu() -> NSMenu {

@@ -28,8 +28,20 @@ if [ ! -f AppIcon.icns ]; then
 fi
 cp AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
-# Ad-hoc signature: enough for local use; macOS permissions attach to it.
-codesign --force --deep --sign - "$APP"
+# Sign with the stable "LocalWillow Signing" identity when present so macOS
+# permissions persist across rebuilds. Ad-hoc fallback changes the signature
+# every build and therefore orphans grants — reset them so the app re-prompts.
+if security find-identity -v -p codesigning 2>/dev/null | grep -q "LocalWillow Signing"; then
+  # Dedicated signing keychain (guards only this self-signed key, hence the
+  # plaintext password) — pre-authorized for codesign so builds never prompt.
+  security unlock-keychain -p localwillow-sign localwillow.keychain 2>/dev/null || true
+  codesign --force --deep --sign "LocalWillow Signing" "$APP"
+  SIGNED="stable identity (permissions persist across rebuilds)"
+else
+  codesign --force --deep --sign - "$APP"
+  tccutil reset Accessibility dev.yun.localwillow >/dev/null || true
+  SIGNED="ad-hoc (re-grant Accessibility after install)"
+fi
 
 # Install to /Applications (the app's permanent home for TCC purposes).
 osascript -e 'tell application "LocalWillow" to quit' 2>/dev/null || true
@@ -37,10 +49,4 @@ sleep 1
 rm -rf /Applications/LocalWillow.app
 ditto "$APP" /Applications/LocalWillow.app
 
-# Every rebuild changes the ad-hoc signature, which orphans the previous
-# Accessibility grant. Clear it so the fresh grant attaches to the new binary
-# (the app detects the re-grant automatically and notifies when armed).
-tccutil reset Accessibility dev.yun.localwillow >/dev/null || true
-
-echo "Built and installed /Applications/LocalWillow.app"
-echo "Re-grant Accessibility when the app prompts (rebuild invalidates it)."
+echo "Built and installed /Applications/LocalWillow.app — signed: $SIGNED"
