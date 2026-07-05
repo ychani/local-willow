@@ -74,7 +74,5 @@ bias detection — prefer a fixed language if you rely heavily on vocabulary.
 
 ## Repo layout
 
-- `app/` — Swift sources, `build.sh`, `Info.plist` → builds `LocalWillow.app`
+- `app/` — Swift sources, `build.sh`, `Info.plist` → builds and installs `LocalWillow.app`
 - `models/` — ggml Whisper models
-- `willow/` + `run.sh` — the original Python CLI prototype of the same pipeline (still works
-  headless via `./run.sh`; useful for scripting/debugging the engine)
