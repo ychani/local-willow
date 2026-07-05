@@ -1,0 +1,15 @@
+# Large model binaries — download via README instructions instead
+models/*.bin
+
+# Build output (rebuilt by app/build.sh)
+LocalWillow.app/
+app/AppIcon.icns
+
+# Python prototype environment
+.venv/
+__pycache__/
+
+# Personal settings / scratch
+config.json
+*.wav
+.DS_Store
