@@ -48,8 +48,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func watchPermissions() {
         permissionTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
             guard let self else { return }
-            if !self.hotkey.isActive && AXIsProcessTrusted() {
-                Log.write("permissions: Accessibility granted — arming hotkey")
+            // Re-arm when the tap is missing OR was created before trust was granted
+            // (such a tap exists but never receives keyboard events).
+            if AXIsProcessTrusted() && !(self.hotkey.isActive && self.hotkey.trustedAtCreation) {
+                Log.write("permissions: Accessibility granted — (re)arming hotkey tap")
+                self.hotkey.stop()
                 if self.hotkey.start() {
                     Notify.post("Ready — hold \(Config.shared.hotkey.label) to dictate")
                 }

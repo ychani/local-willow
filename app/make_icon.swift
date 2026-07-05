@@ -23,18 +23,18 @@ NSColor.black.withAlphaComponent(0.001).setFill()
 squircle.fill()
 NSGraphicsContext.restoreGraphicsState()
 
-// Diagonal emerald gradient
+// Near-black gradient (Wispr Flow-style dark tile)
 let gradient = NSGradient(colors: [
-    NSColor(calibratedRed: 0.22, green: 0.78, blue: 0.55, alpha: 1),  // spring green
-    NSColor(calibratedRed: 0.10, green: 0.47, blue: 0.34, alpha: 1),  // emerald
-    NSColor(calibratedRed: 0.04, green: 0.24, blue: 0.18, alpha: 1),  // deep forest
+    NSColor(calibratedWhite: 0.17, alpha: 1),
+    NSColor(calibratedWhite: 0.09, alpha: 1),
+    NSColor(calibratedWhite: 0.03, alpha: 1),
 ], atLocations: [0.0, 0.55, 1.0], colorSpace: .deviceRGB)!
 gradient.draw(in: squircle, angle: -60)
 
 // Subtle top sheen for depth
 NSGraphicsContext.saveGraphicsState()
 squircle.addClip()
-let sheen = NSGradient(starting: NSColor.white.withAlphaComponent(0.18),
+let sheen = NSGradient(starting: NSColor.white.withAlphaComponent(0.10),
                        ending: NSColor.white.withAlphaComponent(0.0))!
 sheen.draw(in: NSRect(x: box.minX, y: box.midY + box.height * 0.18,
                       width: box.width, height: box.height * 0.32), angle: -90)

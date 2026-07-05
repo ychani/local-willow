@@ -13,6 +13,9 @@ final class HotkeyMonitor {
     private var tap: CFMachPort?
     private var source: CFRunLoopSource?
     private var held = false
+    /// A tap created before Accessibility was granted exists but never receives
+    /// keyboard events — it must be recreated after the grant.
+    private(set) var trustedAtCreation = false
 
     var isActive: Bool {
         guard let tap else { return false }
@@ -42,7 +45,8 @@ final class HotkeyMonitor {
         tap = t
         source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, t, 0)
         CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
-        Log.write("hotkey: event tap active")
+        trustedAtCreation = AXIsProcessTrusted()
+        Log.write("hotkey: event tap active (trusted=\(trustedAtCreation))")
         return true
     }
 
