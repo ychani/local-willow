@@ -32,12 +32,15 @@ cp AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 codesign --force --deep --sign - "$APP"
 
 # Install to /Applications (the app's permanent home for TCC purposes).
-# NOTE: every rebuild changes the ad-hoc signature, so Accessibility must be
-# re-granted after installing: run  tccutil reset Accessibility dev.yun.localwillow
-# then re-enable it in System Settings when the app prompts.
 osascript -e 'tell application "LocalWillow" to quit' 2>/dev/null || true
 sleep 1
 rm -rf /Applications/LocalWillow.app
 ditto "$APP" /Applications/LocalWillow.app
 
+# Every rebuild changes the ad-hoc signature, which orphans the previous
+# Accessibility grant. Clear it so the fresh grant attaches to the new binary
+# (the app detects the re-grant automatically and notifies when armed).
+tccutil reset Accessibility dev.yun.localwillow >/dev/null || true
+
 echo "Built and installed /Applications/LocalWillow.app"
+echo "Re-grant Accessibility when the app prompts (rebuild invalidates it)."
