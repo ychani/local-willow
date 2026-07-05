@@ -17,3 +17,6 @@ config.json
 # Xcode user state
 ios/**/xcuserdata/
 ios/**/*.xcuserstate
+
+# Xcode build products
+ios/build/
