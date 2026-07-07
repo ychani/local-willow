@@ -50,6 +50,7 @@ struct SettingsView: View {
     @StateObject private var history = HistoryStore.shared
 
     @State private var hotkey = Config.shared.hotkey
+    @State private var toggleDictation = Config.shared.toggleDictation
     @State private var language = Config.shared.language
     @State private var removeFillers = Config.shared.removeFillers
     @State private var sounds = Config.shared.sounds
@@ -78,10 +79,14 @@ struct SettingsView: View {
 
     private var generalTab: some View {
         Form {
-            Picker("Hold to dictate:", selection: $hotkey) {
+            Picker("Dictation key:", selection: $hotkey) {
                 ForEach(Hotkey.allCases) { hk in Text(hk.label).tag(hk) }
             }
             .onChange(of: hotkey) { Config.shared.hotkey = hotkey }
+
+            Toggle("Toggle mode — press once to start, again to stop", isOn: $toggleDictation)
+                .onChange(of: toggleDictation) { Config.shared.toggleDictation = toggleDictation }
+                .help("Off: hold the key while speaking. On: one press starts, the next press stops. Esc cancels in both.")
 
             TextField("Language (ISO code):", text: $language)
                 .onChange(of: language) { Config.shared.language = language }
@@ -134,7 +139,7 @@ struct SettingsView: View {
 
             permissionRow(
                 granted: perms.accessibility, title: "Accessibility",
-                detail: "To detect the hold-to-dictate key and insert text at your cursor.",
+                detail: "To detect the dictation key and insert text at your cursor.",
                 action: {
                     perms.requestAccessibility()
                     NSWorkspace.shared.open(URL(string:
@@ -142,7 +147,7 @@ struct SettingsView: View {
                 })
 
             if perms.mic && perms.accessibility {
-                Label("All set — hold \(Config.shared.hotkey.label) in any app to dictate.",
+                Label("All set — \(Config.shared.actionHint.lowercased()) in any app to dictate.",
                       systemImage: "checkmark.seal.fill")
                     .foregroundColor(.green)
                     .padding(.top, 4)

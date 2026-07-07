@@ -27,9 +27,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         recorder.onLevel = { [weak self] level in
             self?.overlay.model.push(level: level)
         }
-        hotkey.onPress = { [weak self] in self?.beginDictation() }
-        hotkey.onRelease = { [weak self] in self?.endDictation() }
+        hotkey.onPress = { [weak self] in self?.handleHotkeyPress() }
+        hotkey.onRelease = { [weak self] in self?.handleHotkeyRelease() }
         hotkey.onCancel = { [weak self] in self?.cancelDictation() }
+        hotkey.isTakeActive = { [weak self] in self?.recorder.isRecording ?? false }
         hotkey.start()
 
         watchPermissions()
@@ -54,7 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 Log.write("permissions: Accessibility granted — (re)arming hotkey tap")
                 self.hotkey.stop()
                 if self.hotkey.start() {
-                    Notify.post("Ready — hold \(Config.shared.hotkey.label) to dictate")
+                    Notify.post("Ready — \(Config.shared.actionHint.lowercased()) to dictate")
                 }
             }
         }
@@ -69,6 +70,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // MARK: - Dictation flow
+
+    /// Hotkey pressed. Push-to-talk starts a take; toggle mode starts if idle,
+    /// otherwise finishes the running take.
+    private func handleHotkeyPress() {
+        if Config.shared.toggleDictation, recorder.isRecording {
+            endDictation()
+        } else {
+            beginDictation()
+        }
+    }
+
+    /// Hotkey released. Ends the take only in push-to-talk mode; toggle mode
+    /// keeps recording until the next press.
+    private func handleHotkeyRelease() {
+        guard !Config.shared.toggleDictation else { return }
+        endDictation()
+    }
 
     private func beginDictation() {
         guard !busy, !recorder.isRecording else { return }
@@ -325,7 +343,7 @@ extension AppDelegate: NSMenuDelegate {
             } else if !engine.isRunning {
                 status.title = "⚠️ Engine stopped — \(engine.lastError ?? "check Settings")"
             } else {
-                status.title = "Hold \(Config.shared.hotkey.label) to dictate · Esc cancels"
+                status.title = "\(Config.shared.actionHint) to dictate · Esc cancels"
             }
         }
         for item in menu.items {

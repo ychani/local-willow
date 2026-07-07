@@ -33,6 +33,7 @@ final class Config {
     private init() {
         d.register(defaults: [
             "hotkey": Hotkey.rightOption.rawValue,
+            "toggleDictation": false,
             "language": "en",
             "removeFillers": true,
             "sounds": true,
@@ -53,6 +54,19 @@ final class Config {
     var hotkey: Hotkey {
         get { Hotkey(rawValue: d.string(forKey: "hotkey") ?? "") ?? .rightOption }
         set { d.set(newValue.rawValue, forKey: "hotkey") }
+    }
+
+    /// When true, the hotkey toggles a take: one press starts, the next press stops.
+    /// When false (default), dictation records only while the hotkey is held.
+    var toggleDictation: Bool {
+        get { d.bool(forKey: "toggleDictation") }
+        set { d.set(newValue, forKey: "toggleDictation") }
+    }
+
+    /// Human phrase for how to trigger dictation, matching the current mode.
+    /// e.g. "Hold Right ⌥ Option" or "Press Right ⌥ Option".
+    var actionHint: String {
+        (toggleDictation ? "Press " : "Hold ") + hotkey.label
     }
 
     var language: String {

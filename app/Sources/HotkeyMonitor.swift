@@ -7,8 +7,11 @@ import Foundation
 final class HotkeyMonitor {
     var onPress: (() -> Void)?
     var onRelease: (() -> Void)?
-    /// Esc pressed while holding the hotkey — abort the dictation.
+    /// Esc pressed while a take is active — abort the dictation.
     var onCancel: (() -> Void)?
+    /// Whether a dictation take is currently in progress. In toggle mode the
+    /// hotkey isn't physically held, so `held` alone can't gate Esc-cancel.
+    var isTakeActive: (() -> Bool)?
 
     private var tap: CFMachPort?
     private var source: CFRunLoopSource?
@@ -66,7 +69,9 @@ final class HotkeyMonitor {
         }
 
         let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-        if keyCode == 53, type == .keyDown, held {  // Esc cancels an active take
+        // Esc cancels an active take — while physically held (push-to-talk) or
+        // while a toggle take is running (key not held).
+        if keyCode == 53, type == .keyDown, held || isTakeActive?() == true {
             held = false
             Log.write("hotkey: cancelled with Esc")
             onCancel?()
