@@ -1,4 +1,4 @@
-# LocalWillow for Windows — one-shot setup.
+# LocalWillow for Windows - one-shot setup.
 # Downloads the whisper.cpp engine and the Whisper model next to this script:
 #   .\engine\whisper-server.exe   (from the whisper.cpp GitHub release)
 #   .\models\ggml-large-v3-turbo-q5_0.bin   (~547 MB, from HuggingFace)
@@ -35,7 +35,7 @@ if ((Test-Path $serverExe) -and -not $Force) {
     if (Test-Path $tmp) { Remove-Item -Recurse -Force $tmp }
     Expand-Archive -Path $zip -DestinationPath $tmp
 
-    # Zip layout varies between releases — locate whisper-server.exe (older
+    # Zip layout varies between releases - locate whisper-server.exe (older
     # releases call it server.exe) and take everything in its folder (DLLs).
     $server = Get-ChildItem -Path $tmp -Recurse -Filter "whisper-server.exe" | Select-Object -First 1
     if (-not $server) {
@@ -60,13 +60,13 @@ if ((Test-Path $modelFile) -and -not $Force) {
 } else {
     $url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-$Model.bin"
     New-Item -ItemType Directory -Force -Path $modelsDir | Out-Null
-    Write-Host "model: downloading $url (this is large — large-v3-turbo-q5_0 is ~547 MB) ..."
+    Write-Host "model: downloading $url (this is large - large-v3-turbo-q5_0 is ~547 MB) ..."
     Invoke-WebRequest -Uri $url -OutFile $modelFile
     Write-Host "model: saved to $modelFile"
 }
 
 Write-Host ""
-Write-Host "Done. Start LocalWillow.exe — hold Right Alt to dictate."
+Write-Host "Done. Start LocalWillow.exe - hold Right Alt to dictate."
 if ($Model -ne "large-v3-turbo-q5_0") {
-    Write-Host "NOTE: you chose model '$Model' — point Settings -> 'Whisper model' at $modelFile"
+    Write-Host "NOTE: you chose model '$Model' - point Settings -> 'Whisper model' at $modelFile"
 }
