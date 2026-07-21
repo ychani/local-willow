@@ -1,6 +1,8 @@
 # LocalWillow
 
 A private, fully local replica of the [Willow Voice](https://willowvoice.com/) macOS app.
+Also available for **Windows** — see [`windows/`](windows/README.md) (portable build,
+no admin rights needed) — and iPhone (`ios/`).
 A native menu-bar app: hold a hotkey, speak while a floating waveform pill shows you're live,
 release — cleaned-up text lands at your cursor in whatever app is focused.
 **No audio or text ever leaves your Mac.**

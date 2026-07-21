@@ -1,0 +1,50 @@
+name: windows-build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "windows/**"
+      - ".github/workflows/windows.yml"
+    tags:
+      - "win-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Publish
+        run: >
+          dotnet publish windows/LocalWillow.csproj
+          -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true
+          -o stage
+
+      - name: Stage portable zip
+        shell: pwsh
+        run: |
+          Copy-Item windows/setup.ps1 stage/
+          Copy-Item windows/README.md stage/
+          Compress-Archive -Path stage/* -DestinationPath LocalWillow-windows-x64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LocalWillow-windows-x64
+          path: LocalWillow-windows-x64.zip
+
+      - name: Release (on win-v* tag)
+        if: startsWith(github.ref, 'refs/tags/win-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: LocalWillow-windows-x64.zip
+          generate_release_notes: true

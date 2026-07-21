@@ -20,3 +20,10 @@ ios/**/*.xcuserstate
 
 # Xcode build products
 ios/build/
+
+# Windows build products + downloaded engine/model (see windows/setup.ps1)
+windows/bin/
+windows/obj/
+windows/dist/
+windows/engine/
+windows/models/
