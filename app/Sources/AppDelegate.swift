@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import SwiftUI
+import UniformTypeIdentifiers
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
@@ -224,6 +225,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                             action: #selector(toggleAI), keyEquivalent: "")
         ai.target = self
         menu.addItem(ai)
+
+        let transcribeFile = NSMenuItem(title: "Transcribe Audio File…",
+                                        action: #selector(transcribeAudioFileAction), keyEquivalent: "")
+        transcribeFile.target = self
+        menu.addItem(transcribeFile)
         menu.addItem(.separator())
 
         let settings = NSMenuItem(title: "Settings…", action: #selector(openSettingsAction),
@@ -275,6 +281,81 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func openSettingsAction() {
         openSettings()
+    }
+
+    // MARK: - Transcribe an existing audio file
+
+    @objc private func transcribeAudioFileAction() {
+        NSApp.activate(ignoringOtherApps: true)
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.message = "Choose an audio file to transcribe"
+        panel.prompt = "Transcribe"
+        var types = AudioConverter.supportedExtensions.compactMap { UTType(filenameExtension: $0) }
+        types.append(.audio)  // catch-all for any other audio the system recognizes
+        panel.allowedContentTypes = types
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        transcribeFile(url)
+    }
+
+    /// Converts the picked file to whisper's WAV, transcribes it, writes a sibling
+    /// .txt next to the source, and copies the transcript to the clipboard.
+    private func transcribeFile(_ source: URL) {
+        guard !busy, !recorder.isRecording else {
+            notify("Busy — finish the current dictation first.")
+            return
+        }
+        busy = true
+        setIcon(state: .processing)
+        Notify.post("Transcribing \(source.lastPathComponent)…")
+
+        Task { @MainActor in
+            defer {
+                self.busy = false
+                self.setIcon(state: .idle)
+            }
+            do {
+                let wav = try AudioConverter.toWhisperWAV(source)
+                let t0 = Date()
+                // Files can be long; give the server a generous ceiling. transcribe()
+                // deletes the temp wav — the user's original is never touched.
+                let raw = try await engine.transcribe(wav: wav, timeout: 3600)
+                Log.write("file-transcribe: \(source.lastPathComponent) "
+                    + "\(Int(Date().timeIntervalSince(t0) * 1000))ms, \(raw.count) chars")
+                let text = TextCleaner.clean(raw)
+                guard !text.isEmpty else {
+                    notify("No speech found in \(source.lastPathComponent).")
+                    return
+                }
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(text, forType: .string)
+                if let dest = try? writeTranscript(text, for: source) {
+                    notify("Saved \(dest.lastPathComponent) · copied to clipboard")
+                } else {
+                    notify("Transcribed \(source.lastPathComponent) · copied to clipboard "
+                        + "(couldn't write a file next to it)")
+                }
+            } catch {
+                Log.write("file-transcribe: FAILED — \(error.localizedDescription)")
+                self.notify("Transcription failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Writes the transcript beside the source as "<name>.txt", never overwriting
+    /// an existing file (falls back to "<name> (2).txt", etc.).
+    private func writeTranscript(_ text: String, for source: URL) throws -> URL {
+        let dir = source.deletingLastPathComponent()
+        let base = source.deletingPathExtension().lastPathComponent
+        var dest = dir.appendingPathComponent(base + ".txt")
+        var n = 2
+        while FileManager.default.fileExists(atPath: dest.path) {
+            dest = dir.appendingPathComponent("\(base) (\(n)).txt")
+            n += 1
+        }
+        try text.write(to: dest, atomically: true, encoding: .utf8)
+        return dest
     }
 
     @objc private func copyHistoryItem(_ sender: NSMenuItem) {

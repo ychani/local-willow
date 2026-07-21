@@ -81,7 +81,7 @@ final class WhisperEngine {
         }
     }
 
-    func transcribe(wav: URL) async throws -> String {
+    func transcribe(wav: URL, timeout: TimeInterval = 120) async throws -> String {
         defer { try? FileManager.default.removeItem(at: wav) }
         if !isRunning { start() }
 
@@ -100,7 +100,7 @@ final class WhisperEngine {
         req.httpMethod = "POST"
         req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         req.httpBody = body
-        req.timeoutInterval = 120
+        req.timeoutInterval = timeout
 
         // The server may still be loading the model right after launch — retry briefly.
         var attempt = 0

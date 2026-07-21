@@ -50,7 +50,7 @@
 		1D4F1E9ED2BA00F4CE09B98B /* WillowKeyboard.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WillowKeyboard.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3518550D27E3190F63D65CAB /* SharedHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedHistory.swift; sourceTree = "<group>"; };
 		41B341DB1E0722A3327BE0B3 /* SpeechEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechEngine.swift; sourceTree = "<group>"; };
-		70F892B2285F51B8EDB2FAA8 /* LocalWillow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LocalWillow.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		70F892B2285F51B8EDB2FAA8 /* LocalWillow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LocalWillow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D70CA084904E8838A881036A /* DictationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationView.swift; sourceTree = "<group>"; };
 		F545E446B94CCC4C1D977ACC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -160,8 +160,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 369E197BDE94EC425EA3FBB8 /* Build configuration list for PBXProject "LocalWillow" */;
 			developmentRegion = en;
@@ -233,6 +231,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 97P4RWNYSU;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -373,6 +372,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 97P4RWNYSU;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
