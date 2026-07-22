@@ -134,6 +134,16 @@ public sealed class TrayAppContext : ApplicationContext
             _tray.Icon = TrayIcons.Idle;
             return;
         }
+        if (_recorder.LastPeak < 0.005f)
+        {
+            // The mic recorded but delivered essentially nothing — almost always a
+            // wrong default device or Windows mic privacy blocking desktop apps.
+            Log.Write($"record: silent take (peak {_recorder.LastPeak:F4}) — check default mic / privacy settings");
+            try { File.Delete(wav); } catch { }
+            _overlay.ShowError("No audio detected — check the default microphone in Windows Sound settings");
+            _tray.Icon = TrayIcons.Idle;
+            return;
+        }
         Log.Write($"record: captured {RecordedSeconds(wav):F1}s");
         _busy = true;
         _tray.Icon = TrayIcons.Processing;

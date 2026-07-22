@@ -11,8 +11,13 @@ public sealed class AudioRecorder
     private WaveInEvent? _waveIn;
     private MemoryStream _samples = new();
     private readonly object _gate = new();
+    private static bool _devicesLogged;
+    private float _peak;
 
     public bool IsRecording { get; private set; }
+
+    /// Loudest raw sample (0..1) of the last take — ~0 means the mic was dead.
+    public float LastPeak { get; private set; }
 
     /// Called on a background thread with a 0..1 level.
     public Action<float>? OnLevel;
@@ -20,13 +25,27 @@ public sealed class AudioRecorder
     public void Start()
     {
         if (IsRecording) return;
-        if (WaveInEvent.DeviceCount == 0)
+        int count = WaveInEvent.DeviceCount;
+        if (count == 0)
             throw new InvalidOperationException("No microphone found");
+        if (!_devicesLogged)
+        {
+            _devicesLogged = true;
+            for (int i = 0; i < count; i++)
+            {
+                try { Log.Write($"record: capture device {i}: {WaveInEvent.GetCapabilities(i).ProductName}"); }
+                catch { }
+            }
+        }
 
         lock (_gate) _samples = new MemoryStream();
+        _peak = 0;
 
         var waveIn = new WaveInEvent
         {
+            // WAVE_MAPPER: always the system default capture device. Device 0 is
+            // merely the first enumerated one and changes with docks/headsets.
+            DeviceNumber = -1,
             WaveFormat = new WaveFormat(16000, 16, 1),
             BufferMilliseconds = 50,
         };
@@ -34,7 +53,7 @@ public sealed class AudioRecorder
         {
             lock (_gate) _samples.Write(e.Buffer, 0, e.BytesRecorded);
 
-            // Level for the overlay (RMS of the int16 buffer).
+            // Level for the overlay (RMS of the int16 buffer) + raw peak.
             double sum = 0;
             int n = e.BytesRecorded / 2;
             for (int i = 0; i < n; i++)
@@ -42,6 +61,8 @@ public sealed class AudioRecorder
                 short s = BitConverter.ToInt16(e.Buffer, i * 2);
                 double f = s / 32768.0;
                 sum += f * f;
+                float a = (float)Math.Abs(f);
+                if (a > _peak) _peak = a;
             }
             float rms = (float)Math.Sqrt(sum / Math.Max(n, 1));
             OnLevel?.Invoke(Math.Min(1.0f, rms * 12));
@@ -73,6 +94,8 @@ public sealed class AudioRecorder
             audio = _samples.ToArray();
             _samples = new MemoryStream();
         }
+        LastPeak = _peak;
+        Log.Write($"record: peak level {LastPeak:F4}");
 
         // Under ~0.3 s is an accidental tap, not dictation.
         if (audio.Length < (int)(16000 * 0.3) * 2) return null;
