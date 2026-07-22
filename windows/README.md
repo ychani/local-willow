@@ -13,8 +13,8 @@ transcript via clipboard + synthetic Ctrl+V (your previous clipboard is restored
 
 **Option A — download a build** (no toolchain needed):
 
-1. Grab `LocalWillow-windows-x64.zip` from the repo's GitHub Releases (or the
-   latest `windows-build` workflow artifact under Actions).
+1. Grab `LocalWillow-windows-x64-win-v<version>.zip` from the repo's GitHub
+   Releases (or the latest `windows-build` workflow artifact under Actions).
 2. Unzip anywhere (e.g. `C:\Tools\LocalWillow`).
 3. In that folder run: `powershell -ExecutionPolicy Bypass -File setup.ps1`
    — downloads the whisper.cpp engine (~10 MB) and the model (~547 MB).
