@@ -45,6 +45,10 @@ public sealed class TrayAppContext : ApplicationContext
         menu.Items.Add(new ToolStripMenuItem("Transcribe Audio File…", null, (_, _) => TranscribeAudioFile()));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem("Settings…", null, (_, _) => OpenSettings()));
+        menu.Items.Add(new ToolStripMenuItem("Open Log Folder", null, (_, _) =>
+        {
+            try { Process.Start("explorer.exe", Log.Dir); } catch { }
+        }));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem("Quit LocalWillow", null, (_, _) => Quit()));
         menu.Opening += (_, _) => RefreshMenu();
@@ -59,6 +63,7 @@ public sealed class TrayAppContext : ApplicationContext
         _tray.DoubleClick += (_, _) => OpenSettings();
 
         _engine.Start();
+        _engine.OnStatus = status => _ui.Post(_ => _overlay.SetStatus(status), null);
 
         _recorder.OnLevel = level => _ui.Post(_ => _overlay.PushLevel(level), null);
         _hotkey.OnPress = () => _ui.Post(_ => HandleHotkeyPress(), null);
@@ -145,21 +150,25 @@ public sealed class TrayAppContext : ApplicationContext
             if (text.Length == 0)
             {
                 Log.Write("transcribe: empty result (silence?)");
+                _overlay.HideOverlay();
                 return;
             }
             Paster.Paste(text);
             HistoryStore.Shared.Add(text);
             PlaySound(SystemSounds.Beep);
+            _overlay.HideOverlay();
         }
         catch (Exception e)
         {
             Log.Write($"transcribe: FAILED — {e.Message}");
+            // The overlay shows the error too — notifications can be suppressed
+            // by Focus Assist, and a silent failure looks like a hang.
+            _overlay.ShowError(e.Message);
             Notify($"Transcription failed: {e.Message}");
         }
         finally
         {
             _busy = false;
-            _overlay.HideOverlay();
             _tray.Icon = TrayIcons.Idle;
         }
     }

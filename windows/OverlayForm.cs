@@ -10,11 +10,14 @@ namespace LocalWillow;
 /// screen — the visual anchor while dictating, like Willow's.
 public sealed class OverlayForm : Form
 {
-    public enum Phase { Recording, Processing }
+    public enum Phase { Recording, Processing, Error }
 
     private Phase _phase = Phase.Recording;
+    private string _status = "Transcribing";
+    private string _errorText = "";
     private readonly float[] _bars = Enumerable.Repeat(0.05f, 24).ToArray();
     private readonly System.Windows.Forms.Timer _repaint;
+    private readonly System.Windows.Forms.Timer _errorHide;
     private int _tick;
 
     public OverlayForm()
@@ -30,6 +33,8 @@ public sealed class OverlayForm : Form
 
         _repaint = new System.Windows.Forms.Timer { Interval = 50 };
         _repaint.Tick += (_, _) => { _tick++; Invalidate(); };
+        _errorHide = new System.Windows.Forms.Timer { Interval = 6000 };
+        _errorHide.Tick += (_, _) => HideOverlay();
     }
 
     protected override bool ShowWithoutActivation => true;
@@ -49,6 +54,8 @@ public sealed class OverlayForm : Form
     public void ShowPhase(Phase phase)
     {
         _phase = phase;
+        _errorHide.Stop();
+        if (phase == Phase.Processing) _status = "Transcribing";
         var wa = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 800);
         Location = new Point(wa.Left + (wa.Width - Width) / 2, wa.Bottom - Height - 60);
         if (!Visible) Show();
@@ -56,8 +63,25 @@ public sealed class OverlayForm : Form
         Invalidate();
     }
 
+    /// Replaces the "Transcribing" caption while processing (e.g. "Loading model…").
+    public void SetStatus(string status)
+    {
+        _status = status;
+        Invalidate();
+    }
+
+    /// Shows a red error pill for a few seconds, then hides itself. This makes
+    /// failures visible even when Windows notifications are suppressed.
+    public void ShowError(string message)
+    {
+        _errorText = message;
+        ShowPhase(Phase.Error);
+        _errorHide.Start();
+    }
+
     public void HideOverlay()
     {
+        _errorHide.Stop();
         _repaint.Stop();
         Hide();
         for (int i = 0; i < _bars.Length; i++) _bars[i] = 0.05f;
@@ -100,15 +124,25 @@ public sealed class OverlayForm : Form
                 x += barW + gap;
             }
         }
-        else
+        else if (_phase == Phase.Processing)
         {
             string dots = new string('.', 1 + _tick / 6 % 3);
             using var font = new Font("Segoe UI", 10.5f, FontStyle.Regular);
             using var white = new SolidBrush(Color.FromArgb(220, 255, 255, 255));
-            var text = "Transcribing" + dots;
+            var text = _status + dots;
             var sz = g.MeasureString(text, font);
             g.DrawString(text, font, white,
                 pill.Left + (pill.Width - sz.Width) / 2,
+                pill.Top + (pill.Height - sz.Height) / 2);
+        }
+        else
+        {
+            using var font = new Font("Segoe UI", 9.5f, FontStyle.Regular);
+            using var red = new SolidBrush(Color.FromArgb(255, 120, 110));
+            var text = _errorText.Length > 52 ? _errorText[..52] + "…" : _errorText;
+            var sz = g.MeasureString(text, font);
+            g.DrawString(text, font, red,
+                pill.Left + Math.Max(8, (pill.Width - sz.Width) / 2),
                 pill.Top + (pill.Height - sz.Height) / 2);
         }
     }

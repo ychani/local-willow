@@ -17,14 +17,18 @@ param(
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 $whisperVersion = "v1.9.1"
-$asset = if ($Cuda) { "whisper-cublas-12.4.0-bin-x64.zip" } else { "whisper-bin-x64.zip" }
+# BLAS build by default: much faster CPU inference than the plain build.
+$asset = if ($Cuda) { "whisper-cublas-12.4.0-bin-x64.zip" } else { "whisper-blas-bin-x64.zip" }
 $engineDir = Join-Path $root "engine"
 $modelsDir = Join-Path $root "models"
 $serverExe = Join-Path $engineDir "whisper-server.exe"
 $modelFile = Join-Path $modelsDir "ggml-$Model.bin"
 
+# An engine installed by an older setup.ps1 lacks the BLAS DLL - refresh it.
+$engineOutdated = (-not $Cuda) -and (Test-Path $serverExe) -and (-not (Test-Path (Join-Path $engineDir "libopenblas.dll")))
+
 # --- Engine -------------------------------------------------------------------
-if ((Test-Path $serverExe) -and -not $Force) {
+if ((Test-Path $serverExe) -and -not $Force -and -not $engineOutdated) {
     Write-Host "engine: already present at $serverExe (use -Force to re-download)"
 } else {
     $url = "https://github.com/ggml-org/whisper.cpp/releases/download/$whisperVersion/$asset"
@@ -49,6 +53,8 @@ if ((Test-Path $serverExe) -and -not $Force) {
         # Renamed old-style binary so the app finds it under the expected name.
         Copy-Item -Path (Join-Path $engineDir $server.Name) -Destination $serverExe
     }
+    # Strip Mark-of-the-Web so nothing second-guesses the downloaded binaries.
+    Get-ChildItem -Path $engineDir -Recurse | Unblock-File
     Remove-Item -Force $zip
     Remove-Item -Recurse -Force $tmp
     Write-Host "engine: installed to $engineDir"

@@ -10,7 +10,7 @@
     <RootNamespace>LocalWillow</RootNamespace>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Description>Private, fully local dictation for Windows</Description>
   </PropertyGroup>
 

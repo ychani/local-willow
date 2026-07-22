@@ -60,6 +60,19 @@ Optional rewrite pass through a local [Ollama](https://ollama.com) model
 (`llama3.2:3b` by default), same as the Mac app. Fully offline. Enable in the
 tray menu once Ollama is running.
 
+## Troubleshooting
+
+- **First dictation after starting the app takes a while**: the 547 MB model is
+  loading into RAM. The pill shows "Loading model…" during this; subsequent
+  dictations are fast because the model stays warm.
+- **Failures show in the pill** (red text) as well as a notification, and full
+  diagnostics land in `%APPDATA%\LocalWillow\LocalWillow.log` plus the raw
+  whisper-server output in `engine.log` (tray menu → *Open Log Folder*).
+- **Slow transcription on CPU**: setup installs the BLAS-accelerated engine by
+  default; if dictation still feels slow, rerun `setup.ps1 -Model small` and
+  point Settings → Whisper model at the new file, or `setup.ps1 -Cuda` on a
+  machine with an NVIDIA GPU.
+
 ## Notes
 
 - Windows "N" editions need the Media Feature Pack for the *Transcribe Audio
