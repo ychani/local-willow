@@ -109,6 +109,7 @@ public sealed class TrayAppContext : ApplicationContext
         catch (Exception e)
         {
             Log.Write($"record: start failed — {e.Message}");
+            _overlay.ShowError($"Mic error: {e.Message}");
             Notify($"Couldn't start recording: {e.Message}");
         }
     }

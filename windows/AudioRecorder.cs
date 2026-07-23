@@ -1,18 +1,30 @@
 using System;
 using System.IO;
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
 namespace LocalWillow;
 
-/// Captures the default microphone at 16 kHz mono Int16 (winmm resamples for us)
-/// and reports a smoothed input level for the waveform overlay.
+/// Captures the Windows default microphone via WASAPI (the modern audio API —
+/// follows the default-device setting and shows up in the mic privacy activity
+/// list), converts to 16 kHz mono Int16 for whisper, and reports a smoothed
+/// input level for the waveform overlay. Falls back to legacy winmm capture if
+/// WASAPI fails.
 public sealed class AudioRecorder
 {
-    private WaveInEvent? _waveIn;
+    private IWaveIn? _capture;
+    private MMDevice? _device;
     private MemoryStream _samples = new();
     private readonly object _gate = new();
-    private static bool _devicesLogged;
     private float _peak;
+
+    // Linear-resampler state, carried across buffers.
+    private double _pos;
+    private float _prevSample;
+    private bool _hasPrev;
+    private int _srcRate;
+    private int _srcChannels;
+    private bool _srcIsFloat;
 
     public bool IsRecording { get; private set; }
 
@@ -25,51 +37,120 @@ public sealed class AudioRecorder
     public void Start()
     {
         if (IsRecording) return;
-        int count = WaveInEvent.DeviceCount;
-        if (count == 0)
-            throw new InvalidOperationException("No microphone found");
-        if (!_devicesLogged)
-        {
-            _devicesLogged = true;
-            for (int i = 0; i < count; i++)
-            {
-                try { Log.Write($"record: capture device {i}: {WaveInEvent.GetCapabilities(i).ProductName}"); }
-                catch { }
-            }
-        }
-
         lock (_gate) _samples = new MemoryStream();
         _peak = 0;
+        _pos = 0;
+        _hasPrev = false;
 
+        try
+        {
+            StartWasapi();
+        }
+        catch (Exception e)
+        {
+            Log.Write($"record: WASAPI failed ({e.Message}) — falling back to winmm");
+            StartWinmm();
+        }
+        IsRecording = true;
+    }
+
+    private void StartWasapi()
+    {
+        using var enumerator = new MMDeviceEnumerator();
+        var device = enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console);
+        Log.Write($"record: WASAPI default mic: {device.FriendlyName}");
+
+        var capture = new WasapiCapture(device);
+        var wf = capture.WaveFormat;
+        _srcRate = wf.SampleRate;
+        _srcChannels = Math.Max(1, wf.Channels);
+        _srcIsFloat = wf.BitsPerSample == 32;
+        if (!_srcIsFloat && wf.BitsPerSample != 16)
+            throw new InvalidOperationException($"Unsupported capture format ({wf.BitsPerSample}-bit)");
+        Log.Write($"record: capture format {_srcRate} Hz, {_srcChannels} ch, {wf.BitsPerSample}-bit");
+
+        capture.DataAvailable += (_, e) => ProcessBuffer(e.Buffer, e.BytesRecorded);
+        capture.StartRecording();
+        _capture = capture;
+        _device = device;
+    }
+
+    private void StartWinmm()
+    {
+        int count = WaveInEvent.DeviceCount;
+        if (count == 0) throw new InvalidOperationException("No microphone found");
+        for (int i = 0; i < count; i++)
+        {
+            try { Log.Write($"record: winmm device {i}: {WaveInEvent.GetCapabilities(i).ProductName}"); }
+            catch { }
+        }
         var waveIn = new WaveInEvent
         {
-            // WAVE_MAPPER: always the system default capture device. Device 0 is
-            // merely the first enumerated one and changes with docks/headsets.
-            DeviceNumber = -1,
+            DeviceNumber = 0,
             WaveFormat = new WaveFormat(16000, 16, 1),
             BufferMilliseconds = 50,
         };
-        waveIn.DataAvailable += (_, e) =>
-        {
-            lock (_gate) _samples.Write(e.Buffer, 0, e.BytesRecorded);
-
-            // Level for the overlay (RMS of the int16 buffer) + raw peak.
-            double sum = 0;
-            int n = e.BytesRecorded / 2;
-            for (int i = 0; i < n; i++)
-            {
-                short s = BitConverter.ToInt16(e.Buffer, i * 2);
-                double f = s / 32768.0;
-                sum += f * f;
-                float a = (float)Math.Abs(f);
-                if (a > _peak) _peak = a;
-            }
-            float rms = (float)Math.Sqrt(sum / Math.Max(n, 1));
-            OnLevel?.Invoke(Math.Min(1.0f, rms * 12));
-        };
+        _srcRate = 16000;
+        _srcChannels = 1;
+        _srcIsFloat = false;
+        waveIn.DataAvailable += (_, e) => ProcessBuffer(e.Buffer, e.BytesRecorded);
         waveIn.StartRecording();
-        _waveIn = waveIn;
-        IsRecording = true;
+        _capture = waveIn;
+    }
+
+    /// Downmixes to mono float, tracks level/peak, resamples to 16 kHz, appends Int16.
+    private void ProcessBuffer(byte[] buffer, int bytes)
+    {
+        int bytesPerSample = _srcIsFloat ? 4 : 2;
+        int frames = bytes / (bytesPerSample * _srcChannels);
+        if (frames <= 0) return;
+
+        var mono = new float[frames];
+        double sum = 0;
+        for (int f = 0; f < frames; f++)
+        {
+            float acc = 0;
+            for (int c = 0; c < _srcChannels; c++)
+            {
+                int off = (f * _srcChannels + c) * bytesPerSample;
+                acc += _srcIsFloat
+                    ? BitConverter.ToSingle(buffer, off)
+                    : BitConverter.ToInt16(buffer, off) / 32768.0f;
+            }
+            float s = acc / _srcChannels;
+            mono[f] = s;
+            sum += s * s;
+            float a = Math.Abs(s);
+            if (a > _peak) _peak = a;
+        }
+        float rms = (float)Math.Sqrt(sum / frames);
+        OnLevel?.Invoke(Math.Min(1.0f, rms * 12));
+
+        // Linear resample _srcRate -> 16000, phase carried across buffers.
+        double step = _srcRate / 16000.0;
+        int prev = _hasPrev ? 1 : 0;
+        int vlen = frames + prev;
+        float V(int i) => i < prev ? _prevSample : mono[i - prev];
+
+        using var outStream = new MemoryStream();
+        using var w = new BinaryWriter(outStream);
+        while (_pos < vlen - 1)
+        {
+            int i0 = (int)_pos;
+            double frac = _pos - i0;
+            float s = (float)(V(i0) * (1 - frac) + V(i0 + 1) * frac);
+            short q = (short)Math.Clamp((int)Math.Round(s * 32767f), short.MinValue, short.MaxValue);
+            w.Write(q);
+            _pos += step;
+        }
+        _pos -= vlen - 1;
+        _prevSample = mono[frames - 1];
+        _hasPrev = true;
+        w.Flush();
+
+        var chunk = outStream.ToArray();
+        if (chunk.Length > 0)
+            lock (_gate) _samples.Write(chunk, 0, chunk.Length);
     }
 
     /// Stops capture and returns a WAV file path, or null if the take was too short.
@@ -79,14 +160,16 @@ public sealed class AudioRecorder
         IsRecording = false;
         try
         {
-            _waveIn?.StopRecording();
-            _waveIn?.Dispose();
+            _capture?.StopRecording();
+            _capture?.Dispose();
+            _device?.Dispose();
         }
         catch (Exception e)
         {
             Log.Write($"record: stop error — {e.Message}");
         }
-        _waveIn = null;
+        _capture = null;
+        _device = null;
 
         byte[] audio;
         lock (_gate)
