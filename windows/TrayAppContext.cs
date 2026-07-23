@@ -66,6 +66,7 @@ public sealed class TrayAppContext : ApplicationContext
         _engine.OnStatus = status => _ui.Post(_ => _overlay.SetStatus(status), null);
 
         _recorder.OnLevel = level => _ui.Post(_ => _overlay.PushLevel(level), null);
+        _recorder.OnError = message => _ui.Post(_ => _overlay.ShowError(message), null);
         _hotkey.OnPress = () => _ui.Post(_ => HandleHotkeyPress(), null);
         _hotkey.OnRelease = () => _ui.Post(_ => HandleHotkeyRelease(), null);
         _hotkey.OnCancel = () => _ui.Post(_ => CancelDictation(), null);

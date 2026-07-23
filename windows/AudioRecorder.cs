@@ -17,6 +17,11 @@ public sealed class AudioRecorder
     private MemoryStream _samples = new();
     private readonly object _gate = new();
     private float _peak;
+    private int _buffers;
+    private bool _usingWasapi;
+    /// Sticky for the app run: set when a WASAPI take dies or delivers nothing,
+    /// so later takes go straight to the winmm fallback.
+    private static bool _wasapiBroken;
 
     // Linear-resampler state, carried across buffers.
     private double _pos;
@@ -34,22 +39,34 @@ public sealed class AudioRecorder
     /// Called on a background thread with a 0..1 level.
     public Action<float>? OnLevel;
 
+    /// Capture died mid-take (device error). Called on a background thread.
+    public Action<string>? OnError;
+
     public void Start()
     {
         if (IsRecording) return;
         lock (_gate) _samples = new MemoryStream();
         _peak = 0;
+        _buffers = 0;
         _pos = 0;
         _hasPrev = false;
 
-        try
+        if (_wasapiBroken)
         {
-            StartWasapi();
-        }
-        catch (Exception e)
-        {
-            Log.Write($"record: WASAPI failed ({e.Message}) — falling back to winmm");
             StartWinmm();
+        }
+        else
+        {
+            try
+            {
+                StartWasapi();
+            }
+            catch (Exception e)
+            {
+                Log.Write($"record: WASAPI failed ({e.Message}) — falling back to winmm");
+                _wasapiBroken = true;
+                StartWinmm();
+            }
         }
         IsRecording = true;
     }
@@ -60,19 +77,33 @@ public sealed class AudioRecorder
         var device = enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console);
         Log.Write($"record: WASAPI default mic: {device.FriendlyName}");
 
-        var capture = new WasapiCapture(device);
+        // Event-driven mode: the recommended WASAPI mode; polling mode is known
+        // to stall on some processed endpoints (echo-cancelling speakerphones etc.)
+        var capture = new WasapiCapture(device, true, 50);
         var wf = capture.WaveFormat;
         _srcRate = wf.SampleRate;
         _srcChannels = Math.Max(1, wf.Channels);
         _srcIsFloat = wf.BitsPerSample == 32;
         if (!_srcIsFloat && wf.BitsPerSample != 16)
             throw new InvalidOperationException($"Unsupported capture format ({wf.BitsPerSample}-bit)");
-        Log.Write($"record: capture format {_srcRate} Hz, {_srcChannels} ch, {wf.BitsPerSample}-bit");
+        Log.Write($"record: capture format {_srcRate} Hz, {_srcChannels} ch, {wf.BitsPerSample}-bit, event-driven");
 
         capture.DataAvailable += (_, e) => ProcessBuffer(e.Buffer, e.BytesRecorded);
+        capture.RecordingStopped += (_, e) =>
+        {
+            // NAudio reports capture-thread failures here; without this handler
+            // a dying device looks like silence.
+            if (e.Exception != null)
+            {
+                Log.Write($"record: WASAPI capture DIED — {e.Exception.Message}");
+                _wasapiBroken = true;
+                OnError?.Invoke($"Mic capture failed: {e.Exception.Message}");
+            }
+        };
         capture.StartRecording();
         _capture = capture;
         _device = device;
+        _usingWasapi = true;
     }
 
     private void StartWinmm()
@@ -84,23 +115,50 @@ public sealed class AudioRecorder
             try { Log.Write($"record: winmm device {i}: {WaveInEvent.GetCapabilities(i).ProductName}"); }
             catch { }
         }
-        var waveIn = new WaveInEvent
-        {
-            DeviceNumber = 0,
-            WaveFormat = new WaveFormat(16000, 16, 1),
-            BufferMilliseconds = 50,
-        };
         _srcRate = 16000;
         _srcChannels = 1;
         _srcIsFloat = false;
-        waveIn.DataAvailable += (_, e) => ProcessBuffer(e.Buffer, e.BytesRecorded);
-        waveIn.StartRecording();
-        _capture = waveIn;
+        // WAVE_MAPPER (-1, the default device) first; some drivers only open by index.
+        Exception? last = null;
+        foreach (int deviceNumber in new[] { -1, 0 })
+        {
+            var waveIn = new WaveInEvent
+            {
+                DeviceNumber = deviceNumber,
+                WaveFormat = new WaveFormat(16000, 16, 1),
+                BufferMilliseconds = 50,
+            };
+            waveIn.DataAvailable += (_, e) => ProcessBuffer(e.Buffer, e.BytesRecorded);
+            waveIn.RecordingStopped += (_, e) =>
+            {
+                if (e.Exception != null)
+                {
+                    Log.Write($"record: winmm capture DIED — {e.Exception.Message}");
+                    OnError?.Invoke($"Mic capture failed: {e.Exception.Message}");
+                }
+            };
+            try
+            {
+                waveIn.StartRecording();
+                Log.Write($"record: winmm capture on device {deviceNumber}");
+                _capture = waveIn;
+                _usingWasapi = false;
+                return;
+            }
+            catch (Exception e)
+            {
+                last = e;
+                Log.Write($"record: winmm device {deviceNumber} failed — {e.Message}");
+                waveIn.Dispose();
+            }
+        }
+        throw last ?? new InvalidOperationException("No usable microphone");
     }
 
     /// Downmixes to mono float, tracks level/peak, resamples to 16 kHz, appends Int16.
     private void ProcessBuffer(byte[] buffer, int bytes)
     {
+        _buffers++;
         int bytesPerSample = _srcIsFloat ? 4 : 2;
         int frames = bytes / (bytesPerSample * _srcChannels);
         if (frames <= 0) return;
@@ -178,7 +236,13 @@ public sealed class AudioRecorder
             _samples = new MemoryStream();
         }
         LastPeak = _peak;
-        Log.Write($"record: peak level {LastPeak:F4}");
+        Log.Write($"record: {(_usingWasapi ? "wasapi" : "winmm")} take — "
+            + $"{_buffers} buffers, {audio.Length / 32000.0:F1}s, peak {LastPeak:F4}");
+        if (_usingWasapi && _buffers == 0)
+        {
+            _wasapiBroken = true;
+            Log.Write("record: WASAPI delivered no data — switching to winmm for the next take");
+        }
 
         // Under ~0.3 s is an accidental tap, not dictation.
         if (audio.Length < (int)(16000 * 0.3) * 2) return null;
