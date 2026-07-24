@@ -100,10 +100,22 @@ public sealed class Config
 
     // -- Derived ---------------------------------------------------------------
 
+    /// Stable per-user home for the engine and models — survives app upgrades,
+    /// unlike the unzipped app folder. No admin rights needed.
+    public static string DataDir => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LocalWillow");
+
     public static string DefaultModelPath =>
-        Path.Combine(AppContext.BaseDirectory, "models", "ggml-large-v3-turbo-q5_0.bin");
+        Path.Combine(DataDir, "models", "ggml-large-v3-turbo-q5_0.bin");
 
     public static string DefaultServerPath =>
+        Path.Combine(DataDir, "engine", "whisper-server.exe");
+
+    // Pre-1.2.1 layout: engine/models next to the exe.
+    private static string LegacyModelPath =>
+        Path.Combine(AppContext.BaseDirectory, "models", "ggml-large-v3-turbo-q5_0.bin");
+
+    private static string LegacyServerPath =>
         Path.Combine(AppContext.BaseDirectory, "engine", "whisper-server.exe");
 
     [JsonIgnore]
@@ -152,14 +164,33 @@ public sealed class Config
             if (File.Exists(ConfigPath))
             {
                 var cfg = JsonSerializer.Deserialize<Config>(File.ReadAllText(ConfigPath));
-                if (cfg != null) return cfg;
+                if (cfg != null) return Migrate(cfg);
             }
         }
         catch (Exception e)
         {
             Log.Write($"config: load failed, using defaults — {e.Message}");
         }
-        return new Config();
+        return Migrate(new Config());
+    }
+
+    /// If a configured engine/model path no longer exists (e.g. the old app
+    /// folder was deleted after an upgrade), fall back to wherever the files
+    /// actually are: the stable %LOCALAPPDATA% home first, then the legacy
+    /// next-to-exe layout.
+    private static Config Migrate(Config cfg)
+    {
+        cfg.WhisperServerPath = ResolveExisting(cfg.WhisperServerPath, DefaultServerPath, LegacyServerPath);
+        cfg.ModelPath = ResolveExisting(cfg.ModelPath, DefaultModelPath, LegacyModelPath);
+        return cfg;
+    }
+
+    private static string ResolveExisting(string configured, params string[] fallbacks)
+    {
+        if (!string.IsNullOrEmpty(configured) && File.Exists(configured)) return configured;
+        foreach (var f in fallbacks)
+            if (File.Exists(f)) return f;
+        return string.IsNullOrEmpty(configured) ? fallbacks[0] : configured;
     }
 
     public void Save()

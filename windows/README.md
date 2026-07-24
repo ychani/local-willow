@@ -50,9 +50,12 @@ hotkey to Right Ctrl (한자 key) or F13 in Settings.
 
 ## Files
 
-Everything lives next to the exe (`engine\`, `models\`) or in
-`%APPDATA%\LocalWillow` (`config.json`, `history.json`, `LocalWillow.log`).
-Uninstall = delete the folder.
+The engine and models live in `%LOCALAPPDATA%\LocalWillow` (`engine\`,
+`models\`) — a stable per-user location that survives app upgrades, so a new
+LocalWillow version never needs the engine or model re-downloaded. Settings,
+history, and logs live in `%APPDATA%\LocalWillow` (`config.json`,
+`history.json`, `LocalWillow.log`, `engine.log`). Upgrading the app = replace
+`LocalWillow.exe`. Uninstall = delete both folders and the exe.
 
 ## AI mode
 

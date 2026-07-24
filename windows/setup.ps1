@@ -1,7 +1,10 @@
 # LocalWillow for Windows - one-shot setup.
-# Downloads the whisper.cpp engine and the Whisper model next to this script:
-#   .\engine\whisper-server.exe   (from the whisper.cpp GitHub release)
-#   .\models\ggml-large-v3-turbo-q5_0.bin   (~547 MB, from HuggingFace)
+# Downloads the whisper.cpp engine and the Whisper model into the stable
+# per-user location (survives app upgrades, no admin needed):
+#   %LOCALAPPDATA%\LocalWillow\engine\whisper-server.exe
+#   %LOCALAPPDATA%\LocalWillow\models\ggml-large-v3-turbo-q5_0.bin  (~547 MB)
+# An engine/model installed next to this script by an older setup.ps1 is
+# moved there automatically (no re-download).
 #
 # Usage:  powershell -ExecutionPolicy Bypass -File setup.ps1 [-Cuda] [-Model <name>] [-Force]
 #   -Cuda    download the CUDA 12 build instead of the CPU build (NVIDIA GPU required)
@@ -19,10 +22,30 @@ $root = $PSScriptRoot
 $whisperVersion = "v1.9.1"
 # BLAS build by default: much faster CPU inference than the plain build.
 $asset = if ($Cuda) { "whisper-cublas-12.4.0-bin-x64.zip" } else { "whisper-blas-bin-x64.zip" }
-$engineDir = Join-Path $root "engine"
-$modelsDir = Join-Path $root "models"
+$dataDir = Join-Path $env:LOCALAPPDATA "LocalWillow"
+$engineDir = Join-Path $dataDir "engine"
+$modelsDir = Join-Path $dataDir "models"
 $serverExe = Join-Path $engineDir "whisper-server.exe"
 $modelFile = Join-Path $modelsDir "ggml-$Model.bin"
+
+# --- Migrate a pre-1.2.1 install (engine/models next to this script) ----------
+$oldEngineDir = Join-Path $root "engine"
+$oldModelsDir = Join-Path $root "models"
+if ((Test-Path (Join-Path $oldEngineDir "whisper-server.exe")) -and -not (Test-Path $serverExe)) {
+    Write-Host "engine: moving existing install to $engineDir ..."
+    New-Item -ItemType Directory -Force -Path $engineDir | Out-Null
+    Move-Item -Path (Join-Path $oldEngineDir "*") -Destination $engineDir -Force
+    Remove-Item -Force $oldEngineDir -ErrorAction SilentlyContinue
+}
+if (Test-Path $oldModelsDir) {
+    $oldModels = Get-ChildItem -Path $oldModelsDir -Filter "*.bin" -ErrorAction SilentlyContinue
+    if ($oldModels) {
+        Write-Host "model: moving existing model(s) to $modelsDir ..."
+        New-Item -ItemType Directory -Force -Path $modelsDir | Out-Null
+        $oldModels | Move-Item -Destination $modelsDir -Force
+        Remove-Item -Force $oldModelsDir -ErrorAction SilentlyContinue
+    }
+}
 
 # An engine installed by an older setup.ps1 lacks the BLAS DLL - refresh it.
 $engineOutdated = (-not $Cuda) -and (Test-Path $serverExe) -and (-not (Test-Path (Join-Path $engineDir "libopenblas.dll")))
