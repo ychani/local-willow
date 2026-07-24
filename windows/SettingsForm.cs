@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using NAudio.CoreAudioApi;
@@ -25,7 +28,11 @@ public sealed class SettingsForm : Form
     private readonly CheckBox _launchAtLogin = new() { Text = "Launch at login", AutoSize = true };
     private readonly CheckBox _aiMode = new() { Text = "AI mode (rewrite via local Ollama)", AutoSize = true };
     private readonly TextBox _ollamaModel = new() { Width = 200 };
-    private readonly TextBox _modelPath = new() { Width = 320 };
+    private readonly ComboBox _model = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 320 };
+    private readonly Button _modelDownload = new() { Text = "Download", AutoSize = true, Enabled = false };
+    private readonly Label _modelStatus = new() { AutoSize = true, ForeColor = SystemColors.GrayText, Margin = new Padding(8, 6, 0, 0) };
+    private string _customModelPath = "";
+    private bool _suppressModelEvents;
     private readonly TextBox _serverPath = new() { Width = 320 };
     private readonly TextBox _vocabulary = new() { Multiline = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill, AcceptsReturn = true };
     private readonly TextBox _replacements = new() { Multiline = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill, AcceptsReturn = true };
@@ -114,7 +121,17 @@ public sealed class SettingsForm : Form
         Full(_launchAtLogin);
         Full(_aiMode);
         Row("Ollama model", _ollamaModel);
-        Row("Whisper model", WithBrowse(_modelPath, "Model files|*.bin|All files|*.*"));
+        Row("Whisper model", _model);
+        var modelPanel = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = Padding.Empty };
+        modelPanel.Controls.Add(_modelDownload);
+        modelPanel.Controls.Add(_modelStatus);
+        Full(modelPanel);
+        _model.SelectedIndexChanged += (_, _) => OnModelSelectionChanged();
+        _modelDownload.Click += (_, _) =>
+        {
+            var m = SelectedCatalogModel();
+            if (m != null) DownloadModel(m);
+        };
         Row("whisper-server", WithBrowse(_serverPath, "Executables|*.exe|All files|*.*"));
 
         page.Controls.Add(layout);
@@ -202,13 +219,124 @@ public sealed class SettingsForm : Form
         _sounds.Checked = cfg.Sounds;
         _aiMode.Checked = cfg.AiMode;
         _ollamaModel.Text = cfg.OllamaModel;
-        _modelPath.Text = cfg.ModelPath;
+        int mi = Array.FindIndex(WhisperModel.All,
+            m => string.Equals(m.FilePath, cfg.ModelPath, StringComparison.OrdinalIgnoreCase));
+        if (mi < 0) _customModelPath = cfg.ModelPath;
+        RefreshModelItems(mi >= 0 ? mi : WhisperModel.All.Length);
+        UpdateModelStatus();
         _serverPath.Text = cfg.WhisperServerPath;
         _vocabulary.Text = cfg.VocabularyRaw.Replace("\n", Environment.NewLine);
         _replacements.Text = cfg.ReplacementsRaw.Replace("\n", Environment.NewLine);
         _launchAtLogin.Checked = IsLaunchAtLogin();
         LoadMicDevices(cfg.MicDeviceId);
         RefreshHistory();
+    }
+
+    // -- Whisper model picker --------------------------------------------------
+
+    private WhisperModel? SelectedCatalogModel() =>
+        _model.SelectedIndex >= 0 && _model.SelectedIndex < WhisperModel.All.Length
+            ? WhisperModel.All[_model.SelectedIndex]
+            : null;
+
+    private void RefreshModelItems(int? select = null)
+    {
+        _suppressModelEvents = true;
+        int idx = select ?? _model.SelectedIndex;
+        _model.Items.Clear();
+        foreach (var m in WhisperModel.All) _model.Items.Add(m.Label);
+        _model.Items.Add("Custom file...");
+        _model.SelectedIndex = Math.Clamp(idx, 0, _model.Items.Count - 1);
+        _suppressModelEvents = false;
+    }
+
+    private void UpdateModelStatus()
+    {
+        var m = SelectedCatalogModel();
+        if (m == null)
+        {
+            _modelDownload.Enabled = false;
+            _modelStatus.Text = _customModelPath.Length > 0 ? _customModelPath : "No file chosen";
+        }
+        else
+        {
+            _modelDownload.Enabled = !m.Downloaded;
+            _modelStatus.Text = m.Downloaded
+                ? "Downloaded - Save to switch"
+                : "Not downloaded - click Download";
+        }
+    }
+
+    private void OnModelSelectionChanged()
+    {
+        if (_suppressModelEvents) return;
+        if (SelectedCatalogModel() == null)
+        {
+            using var dlg = new OpenFileDialog { Filter = "Model files|*.bin|All files|*.*" };
+            if (dlg.ShowDialog(this) == DialogResult.OK) _customModelPath = dlg.FileName;
+        }
+        UpdateModelStatus();
+    }
+
+    /// Streams the model from HuggingFace into the stable models folder, then
+    /// makes it the active model and restarts the engine. Survives the form
+    /// being closed mid-download (UI updates are skipped, the file completes).
+    private async void DownloadModel(WhisperModel m)
+    {
+        void Status(string s)
+        {
+            if (!IsDisposed) _modelStatus.Text = s;
+        }
+        _modelDownload.Enabled = false;
+        var partial = m.FilePath + ".partial";
+        try
+        {
+            Log.Write($"model: downloading {m.Url}");
+            Directory.CreateDirectory(Path.GetDirectoryName(m.FilePath)!);
+            using var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+            using var resp = await http.GetAsync(m.Url, HttpCompletionOption.ResponseHeadersRead);
+            resp.EnsureSuccessStatusCode();
+            long total = resp.Content.Headers.ContentLength ?? -1;
+            await using (var src = await resp.Content.ReadAsStreamAsync())
+            await using (var dst = File.Create(partial))
+            {
+                var buf = new byte[1 << 16];
+                long done = 0;
+                int n;
+                var lastUi = DateTime.MinValue;
+                while ((n = await src.ReadAsync(buf)) > 0)
+                {
+                    await dst.WriteAsync(buf.AsMemory(0, n));
+                    done += n;
+                    if ((DateTime.Now - lastUi).TotalMilliseconds > 250)
+                    {
+                        lastUi = DateTime.Now;
+                        Status(total > 0
+                            ? $"Downloading... {done * 100 / total}% of {total / 1048576} MB"
+                            : $"Downloading... {done / 1048576} MB");
+                    }
+                }
+            }
+            File.Move(partial, m.FilePath, overwrite: true);
+            Log.Write($"model: downloaded {m.FileName}");
+
+            Config.Shared.ModelPath = m.FilePath;
+            Config.Shared.Save();
+            OnEngineSettingsChanged?.Invoke();
+            if (!IsDisposed)
+            {
+                RefreshModelItems();
+                Status("Downloaded - now active");
+                _modelDownload.Enabled = false;
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Write($"model: download FAILED - {e.Message}");
+            try { File.Delete(partial); } catch { }
+            Status($"Download failed: {e.Message}");
+            if (!IsDisposed) _modelDownload.Enabled = true;
+        }
     }
 
     private void LoadMicDevices(string selectedId)
@@ -236,9 +364,23 @@ public sealed class SettingsForm : Form
     private void SaveSettings()
     {
         var cfg = Config.Shared;
+
+        // Apply the model selection only when the file actually exists — an
+        // undownloaded pick keeps the current model until Download completes.
+        string newModelPath = cfg.ModelPath;
+        var selected = SelectedCatalogModel();
+        if (selected != null)
+        {
+            if (selected.Downloaded) newModelPath = selected.FilePath;
+        }
+        else if (_customModelPath.Length > 0 && File.Exists(_customModelPath))
+        {
+            newModelPath = _customModelPath;
+        }
+
         bool engineChanged =
             cfg.LanguageRaw != _language.Text.Trim() ||
-            cfg.ModelPath != _modelPath.Text.Trim() ||
+            cfg.ModelPath != newModelPath ||
             cfg.WhisperServerPath != _serverPath.Text.Trim() ||
             cfg.VocabularyRaw != Normalize(_vocabulary.Text);
 
@@ -249,7 +391,7 @@ public sealed class SettingsForm : Form
         cfg.Sounds = _sounds.Checked;
         cfg.AiMode = _aiMode.Checked;
         cfg.OllamaModel = _ollamaModel.Text.Trim();
-        cfg.ModelPath = _modelPath.Text.Trim();
+        cfg.ModelPath = newModelPath;
         cfg.WhisperServerPath = _serverPath.Text.Trim();
         cfg.VocabularyRaw = Normalize(_vocabulary.Text);
         cfg.ReplacementsRaw = Normalize(_replacements.Text);
