@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using Microsoft.Win32;
+using NAudio.CoreAudioApi;
 
 namespace LocalWillow;
 
@@ -14,6 +16,8 @@ public sealed class SettingsForm : Form
     public Action? OnEngineSettingsChanged;
 
     private readonly ComboBox _hotkey = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 200 };
+    private readonly ComboBox _mic = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 320 };
+    private List<(string Id, string Name)> _micDevices = new();
     private readonly CheckBox _toggleMode = new() { Text = "Toggle mode (press to start, press again to stop)", AutoSize = true };
     private readonly TextBox _language = new() { Width = 200 };
     private readonly CheckBox _removeFillers = new() { Text = "Remove filler words (um, uh…)", AutoSize = true };
@@ -97,6 +101,7 @@ public sealed class SettingsForm : Form
         foreach (var hk in Enum.GetValues<Hotkey>()) _hotkey.Items.Add(hk.Label());
         Row("Hotkey", _hotkey);
         Full(_toggleMode);
+        Row("Microphone", _mic);
         Row("Language", _language);
         Full(new Label
         {
@@ -202,7 +207,30 @@ public sealed class SettingsForm : Form
         _vocabulary.Text = cfg.VocabularyRaw.Replace("\n", Environment.NewLine);
         _replacements.Text = cfg.ReplacementsRaw.Replace("\n", Environment.NewLine);
         _launchAtLogin.Checked = IsLaunchAtLogin();
+        LoadMicDevices(cfg.MicDeviceId);
         RefreshHistory();
+    }
+
+    private void LoadMicDevices(string selectedId)
+    {
+        _micDevices = new List<(string, string)> { ("", "System default") };
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            foreach (var d in enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active))
+            {
+                _micDevices.Add((d.ID, d.FriendlyName));
+                d.Dispose();
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Write($"settings: mic enumeration failed — {e.Message}");
+        }
+        _mic.Items.Clear();
+        foreach (var (_, name) in _micDevices) _mic.Items.Add(name);
+        int idx = _micDevices.FindIndex(m => m.Id == selectedId);
+        _mic.SelectedIndex = idx >= 0 ? idx : 0;
     }
 
     private void SaveSettings()
@@ -225,6 +253,7 @@ public sealed class SettingsForm : Form
         cfg.WhisperServerPath = _serverPath.Text.Trim();
         cfg.VocabularyRaw = Normalize(_vocabulary.Text);
         cfg.ReplacementsRaw = Normalize(_replacements.Text);
+        cfg.MicDeviceId = _micDevices[Math.Clamp(_mic.SelectedIndex, 0, _micDevices.Count - 1)].Id;
         cfg.Save();
         SetLaunchAtLogin(_launchAtLogin.Checked);
 

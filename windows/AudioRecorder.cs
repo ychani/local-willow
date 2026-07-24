@@ -74,8 +74,8 @@ public sealed class AudioRecorder
     private void StartWasapi()
     {
         using var enumerator = new MMDeviceEnumerator();
-        var device = enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console);
-        Log.Write($"record: WASAPI default mic: {device.FriendlyName}");
+        MMDevice device = PickDevice(enumerator);
+        Log.Write($"record: WASAPI mic: {device.FriendlyName}");
 
         // Event-driven mode: the recommended WASAPI mode; polling mode is known
         // to stall on some processed endpoints (echo-cancelling speakerphones etc.)
@@ -104,6 +104,27 @@ public sealed class AudioRecorder
         _capture = capture;
         _device = device;
         _usingWasapi = true;
+    }
+
+    /// The configured mic if set and still active, else the system default.
+    private static MMDevice PickDevice(MMDeviceEnumerator enumerator)
+    {
+        var preferred = Config.Shared.MicDeviceId;
+        if (!string.IsNullOrEmpty(preferred))
+        {
+            try
+            {
+                var d = enumerator.GetDevice(preferred);
+                if (d.State == DeviceState.Active) return d;
+                Log.Write($"record: configured mic not active ({d.FriendlyName}) — using default");
+                d.Dispose();
+            }
+            catch (Exception e)
+            {
+                Log.Write($"record: configured mic unavailable ({e.Message}) — using default");
+            }
+        }
+        return enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console);
     }
 
     private void StartWinmm()
